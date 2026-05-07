@@ -22,15 +22,18 @@ Para probarlo localmente, abre `index.html` en tu navegador.
 
 - `help`
 - `start`
+- `restart`
 - `clear`
+- `sound on`
+- `sound off`
 - `abaddon` (easter egg)
 
-## Personalizar acertijo
+## Personalizar acertijos
 
 En `script.js` se pueden editar estas constantes:
 
-- `RIDDLE_TEXT` para cambiar el enunciado
-- `RIDDLE_ANSWERS` para cambiar respuestas válidas
+- `RIDDLES` para cambiar enunciados y respuestas válidas de cada acertijo
+- `SOUND_ENABLED` para activar/desactivar toda la capa de sonido
 
 ## Despliegue
 

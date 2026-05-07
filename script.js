@@ -2,17 +2,39 @@ const output = document.getElementById("output");
 const form = document.getElementById("terminal-form");
 const input = document.getElementById("terminal-input");
 
-// === ZONA EDITABLE DEL ACERTIJO ===
-const RIDDLE_TEXT =
-  "Tengo siglos de historia pero no envejezco. Guardo secretos pero no hablo. Soy invocado en la oscuridad pero no soy un demonio. ¿Qué soy?";
-const RIDDLE_ANSWERS = ["libro", "un libro", "grimorio", "un grimorio"];
+// === ZONA EDITABLE DE ACERTIJOS ===
+const RIDDLES = [
+  {
+    text: "Soy un guardián de la verdad en una transacción: o todo se cumple o nada sucede. ¿Qué propiedad ACID soy?",
+    answers: ["atomicidad", "atómica", "atomicity"],
+  },
+  {
+    text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí. ¿Qué propiedad ACID soy?",
+    answers: ["aislamiento", "aislado", "isolation", "isolated"],
+  },
+  {
+    text: "Tras confirmar un cambio, ni una caída del sistema puede borrarlo. ¿Qué propiedad ACID soy?",
+    answers: ["durabilidad", "durability"],
+  },
+  {
+    text: "Si todo se apaga y vuelve a encender, mis datos siguen ahí. ¿Qué concepto de bases de datos soy?",
+    answers: ["estado persistente", "persistencia", "durable state", "estado durable"],
+  },
+];
 // ================================
 
 const SECRET_COMMAND = "abaddon";
-const SOUND_ENABLED = false;
+const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
+const AMBIENT_VOLUME_LEVEL = 0.022;
+const WOBBLE_FREQUENCY = 0.1;
+const WOBBLE_FREQUENCY_DEVIATION = 3;
+const AMBIENT_FADE_OUT_DURATION = 0.25;
+const AMBIENT_STOP_DELAY = 0.28;
 let audioContext = null;
 let lastTypeBeepAt = 0;
+let ambientStarted = false;
+let ambientNodes = null;
 
 const bootLines = [
   "[OK] Iniciando Protocolo de Invocación IX...",
@@ -30,18 +52,73 @@ const bootLines = [
   "",
   "Bienvenido, iniciado.",
   "Escribe 'help' para ver comandos.",
+  "Tip: usa 'sound on' o 'sound off' para el ambiente.",
 ];
 
 let challengeStarted = false;
 let solved = false;
 let writing = Promise.resolve();
+let currentRiddleIndex = 0;
 
-function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
-  if (!SOUND_ENABLED) return;
+function ensureAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
-  const ctx = audioContext;
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
+function startAmbientSound() {
+  if (!SOUND_ENABLED || ambientStarted) return;
+  const ctx = ensureAudioContext();
+  const master = ctx.createGain();
+  const droneA = ctx.createOscillator();
+  const droneB = ctx.createOscillator();
+  const wobble = ctx.createOscillator();
+  const wobbleGain = ctx.createGain();
+
+  master.gain.value = AMBIENT_VOLUME_LEVEL;
+  droneA.type = "triangle";
+  droneA.frequency.value = 58;
+  droneB.type = "sine";
+  droneB.frequency.value = 87;
+  wobble.type = "sine";
+  wobble.frequency.value = WOBBLE_FREQUENCY;
+  wobbleGain.gain.value = WOBBLE_FREQUENCY_DEVIATION;
+
+  wobble.connect(wobbleGain);
+  wobbleGain.connect(droneB.frequency);
+  droneA.connect(master);
+  droneB.connect(master);
+  master.connect(ctx.destination);
+
+  droneA.start();
+  droneB.start();
+  wobble.start();
+
+  ambientNodes = { master, droneA, droneB, wobble, wobbleGain };
+  ambientStarted = true;
+}
+
+function stopAmbientSound() {
+  if (!ambientStarted || !ambientNodes) return;
+  const { droneA, droneB, wobble, master } = ambientNodes;
+  const now = audioContext?.currentTime ?? 0;
+  master.gain.cancelScheduledValues(now);
+  master.gain.setValueAtTime(master.gain.value, now);
+  master.gain.linearRampToValueAtTime(0, now + AMBIENT_FADE_OUT_DURATION);
+  droneA.stop(now + AMBIENT_STOP_DELAY);
+  droneB.stop(now + AMBIENT_STOP_DELAY);
+  wobble.stop(now + AMBIENT_STOP_DELAY);
+  ambientNodes = null;
+  ambientStarted = false;
+}
+
+function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
+  if (!SOUND_ENABLED) return;
+  const ctx = ensureAudioContext();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "square";
@@ -122,19 +199,49 @@ function printHelp() {
   appendLine("Comandos disponibles:");
   appendLine("  help  - Muestra esta ayuda");
   appendLine("  start - Inicia la prueba iniciática");
+  appendLine("  restart - Reinicia la prueba iniciática");
   appendLine("  clear - Limpia la terminal");
+  appendLine("  sound on/off - Activa o desactiva sonido ambiente");
 }
 
-async function startChallenge() {
+function formatRiddleLabel(index) {
+  if (index < 0 || index >= RIDDLES.length) {
+    return `ACERTIJO ?/${RIDDLES.length}`;
+  }
+  return `ACERTIJO ${index + 1}/${RIDDLES.length}`;
+}
+
+async function askCurrentRiddle() {
+  const riddle = getCurrentRiddle();
+  if (!riddle) {
+    appendLine("Estado de acertijo inválido. Usa 'restart' para reintentar.", "error");
+    return;
+  }
+  await typeLine(formatRiddleLabel(currentRiddleIndex));
+  await typeLine(riddle.text);
+  appendLine("Responde con una palabra o frase corta.");
+}
+
+async function startChallenge(forceRestart = false) {
   if (solved) {
     appendLine("El sello ya ha sido roto. Tu acceso permanece abierto.", "success");
     return;
   }
 
+  if (challengeStarted && !forceRestart) {
+    appendLine("La prueba ya está en curso. Responde el acertijo actual.");
+    await askCurrentRiddle();
+    return;
+  }
+
+  if (challengeStarted && forceRestart) {
+    appendLine("Reiniciando prueba iniciática...");
+  }
+
   challengeStarted = true;
+  currentRiddleIndex = 0;
   await typeLine("RITUAL DE ACCESO // NIVEL: NEOFITO");
-  await typeLine(RIDDLE_TEXT);
-  appendLine("Escribe tu respuesta en una sola palabra o frase corta.");
+  await askCurrentRiddle();
 }
 
 async function grantAccess() {
@@ -154,6 +261,34 @@ async function grantAccess() {
 
 function denyAccess() {
   appendLine("Las sombras no repiten tu palabra. Intenta de nuevo.", "error");
+}
+
+async function processChallengeAnswer(cmd) {
+  const riddle = getCurrentRiddle();
+  if (!riddle) {
+    appendLine("Secuencia de acertijos desincronizada. Usa 'restart'.", "error");
+    return;
+  }
+
+  const isCorrect = riddle.answers.map(normalize).includes(cmd);
+  if (!isCorrect) {
+    denyAccess();
+    return;
+  }
+
+  appendLine(`Sello ${currentRiddleIndex + 1} quebrado.`, "success");
+  currentRiddleIndex += 1;
+
+  if (currentRiddleIndex >= RIDDLES.length) {
+    await grantAccess();
+    return;
+  }
+
+  await askCurrentRiddle();
+}
+
+function getCurrentRiddle() {
+  return RIDDLES[currentRiddleIndex] ?? null;
 }
 
 async function runCommand(rawValue) {
@@ -177,6 +312,23 @@ async function runCommand(rawValue) {
     return;
   }
 
+  if (cmd === "restart") {
+    await startChallenge(true);
+    return;
+  }
+
+  if (cmd === "sound on" || cmd === "sonido on") {
+    startAmbientSound();
+    appendLine("Sonido ambiente activado.");
+    return;
+  }
+
+  if (cmd === "sound off" || cmd === "sonido off") {
+    stopAmbientSound();
+    appendLine("Sonido ambiente desactivado.");
+    return;
+  }
+
   if (cmd === SECRET_COMMAND) {
     appendLine("[EASTER EGG] El Ojo del Vacío pestañea y luego calla.");
     return;
@@ -187,13 +339,7 @@ async function runCommand(rawValue) {
     return;
   }
 
-  const isCorrect = RIDDLE_ANSWERS.map(normalize).includes(cmd);
-  if (isCorrect) {
-    await grantAccess();
-    return;
-  }
-
-  denyAccess();
+  await processChallengeAnswer(cmd);
 }
 
 form.addEventListener("submit", async (event) => {
@@ -210,6 +356,9 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-input.addEventListener("keydown", () => playBeep(440, 0.008, 0.006));
+input.addEventListener("keydown", () => {
+  playBeep(440, 0.008, 0.006);
+  startAmbientSound();
+});
 
 boot();
