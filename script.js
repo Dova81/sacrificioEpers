@@ -28,7 +28,7 @@ const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
 const AMBIENT_VOLUME = 0.022;
 const WOBBLE_FREQUENCY = 0.1;
-const WOBBLE_GAIN_AMOUNT = 3;
+const WOBBLE_FREQUENCY_DEVIATION = 3;
 const AMBIENT_FADE_OUT_DURATION = 0.25;
 const AMBIENT_STOP_DELAY = 0.28;
 let audioContext = null;
@@ -86,7 +86,7 @@ function startAmbientSound() {
   droneB.frequency.value = 87;
   wobble.type = "sine";
   wobble.frequency.value = WOBBLE_FREQUENCY;
-  wobbleGain.gain.value = WOBBLE_GAIN_AMOUNT;
+  wobbleGain.gain.value = WOBBLE_FREQUENCY_DEVIATION;
 
   wobble.connect(wobbleGain);
   wobbleGain.connect(droneB.frequency);
@@ -209,12 +209,13 @@ function formatRiddleLabel(index) {
 }
 
 async function askCurrentRiddle() {
-  if (currentRiddleIndex < 0 || currentRiddleIndex >= RIDDLES.length) {
+  const riddle = getCurrentRiddle();
+  if (!riddle) {
     appendLine("Estado de acertijo inválido. Usa 'restart' para reintentar.", "error");
     return;
   }
   await typeLine(formatRiddleLabel(currentRiddleIndex));
-  await typeLine(RIDDLES[currentRiddleIndex].text);
+  await typeLine(riddle.text);
   appendLine("Responde con una palabra o frase corta.");
 }
 
@@ -256,7 +257,7 @@ function denyAccess() {
 }
 
 async function processChallengeAnswer(cmd) {
-  const riddle = RIDDLES[currentRiddleIndex];
+  const riddle = getCurrentRiddle();
   if (!riddle) {
     appendLine("Secuencia de acertijos desincronizada. Usa 'restart'.", "error");
     return;
@@ -277,6 +278,10 @@ async function processChallengeAnswer(cmd) {
   }
 
   await askCurrentRiddle();
+}
+
+function getCurrentRiddle() {
+  return RIDDLES[currentRiddleIndex] ?? null;
 }
 
 async function runCommand(rawValue) {
