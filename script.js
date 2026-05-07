@@ -62,6 +62,7 @@ let challengeStarted = false;
 let solved = false;
 let writing = Promise.resolve();
 let currentRiddleIndex = 0;
+let rdjNarrationToken = 0;
 
 const RDJ_NARRATION = [
   "Un maremoto de terror primigenio nos devoró tras la apertura del ataúd en las entrañas húmedas del cementerio. En ese breve instante, asfixiados por el temor hacia lo inefable, sentimos como algo dentro de nosotros había desaparecido y transferido a otro lugar. Algo tan sutil como un aliento, tan definitivo como la extinción de una estrella.",
@@ -248,6 +249,7 @@ function narrateWithSpeechSynthesis(text) {
   }
 
   const speech = window.speechSynthesis;
+  const narrationToken = ++rdjNarrationToken;
   if (speech.speaking || speech.pending) {
     speech.cancel();
   }
@@ -260,7 +262,12 @@ function narrateWithSpeechSynthesis(text) {
   let speechStarted = false;
   let fallbackTimerId = null;
   const beginSpeech = () => {
-    if (speechStarted || speech.speaking || speech.pending) {
+    if (
+      narrationToken !== rdjNarrationToken ||
+      speechStarted ||
+      speech.speaking ||
+      speech.pending
+    ) {
       return false;
     }
     speechStarted = true;
@@ -295,6 +302,10 @@ function narrateWithSpeechSynthesis(text) {
 
   if (!trySpeakWithVoice()) {
     const onVoicesReady = () => {
+      if (narrationToken !== rdjNarrationToken) {
+        speech.removeEventListener("voiceschanged", onVoicesReady);
+        return;
+      }
       if (speechStarted) {
         speech.removeEventListener("voiceschanged", onVoicesReady);
         return;
@@ -302,11 +313,13 @@ function narrateWithSpeechSynthesis(text) {
       if (!trySpeakWithVoice()) return;
       if (fallbackTimerId) {
         clearTimeout(fallbackTimerId);
+        fallbackTimerId = null;
       }
       speech.removeEventListener("voiceschanged", onVoicesReady);
     };
     speech.addEventListener("voiceschanged", onVoicesReady);
     fallbackTimerId = setTimeout(() => {
+      if (narrationToken !== rdjNarrationToken) return;
       speech.removeEventListener("voiceschanged", onVoicesReady);
       if (!speechStarted) {
         speakChunks(null);
