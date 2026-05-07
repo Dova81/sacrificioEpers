@@ -26,7 +26,7 @@ const RIDDLES = [
 const SECRET_COMMAND = "abaddon";
 const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
-const AMBIENT_VOLUME = 0.022;
+const AMBIENT_VOLUME_LEVEL = 0.022;
 const WOBBLE_FREQUENCY = 0.1;
 const WOBBLE_FREQUENCY_DEVIATION = 3;
 const AMBIENT_FADE_OUT_DURATION = 0.25;
@@ -79,7 +79,7 @@ function startAmbientSound() {
   const wobble = ctx.createOscillator();
   const wobbleGain = ctx.createGain();
 
-  master.gain.value = AMBIENT_VOLUME;
+  master.gain.value = AMBIENT_VOLUME_LEVEL;
   droneA.type = "triangle";
   droneA.frequency.value = 58;
   droneB.type = "sine";
@@ -205,6 +205,9 @@ function printHelp() {
 }
 
 function formatRiddleLabel(index) {
+  if (index < 0 || index >= RIDDLES.length) {
+    return `ACERTIJO ?/${RIDDLES.length}`;
+  }
   return `ACERTIJO ${index + 1}/${RIDDLES.length}`;
 }
 
@@ -229,6 +232,10 @@ async function startChallenge(forceRestart = false) {
     appendLine("La prueba ya está en curso. Responde el acertijo actual.");
     await askCurrentRiddle();
     return;
+  }
+
+  if (challengeStarted && forceRestart) {
+    appendLine("Reiniciando prueba iniciática...");
   }
 
   challengeStarted = true;
