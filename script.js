@@ -24,7 +24,7 @@ const RIDDLES = [
 // ================================
 
 const SECRET_COMMAND = "abaddon";
-const RDJ_COMMANDS = ["rdj", "quien es rdj", "preguntar por rdj"];
+const RDJ_COMMANDS = ["rdj"];
 const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
 const AMBIENT_VOLUME_LEVEL = 0.022;
@@ -32,6 +32,7 @@ const WOBBLE_FREQUENCY = 0.1;
 const WOBBLE_FREQUENCY_DEVIATION = 3;
 const AMBIENT_FADE_OUT_DURATION = 0.25;
 const AMBIENT_STOP_DELAY = 0.28;
+const VOICE_LOADING_TIMEOUT_MS = 800;
 let audioContext = null;
 let lastTypeBeepAt = 0;
 let ambientStarted = false;
@@ -292,7 +293,7 @@ function narrateWithSpeechSynthesis(text) {
       if (!speech.speaking && !speech.pending) {
         speakChunks(null);
       }
-    }, 800);
+    }, VOICE_LOADING_TIMEOUT_MS);
   }
 }
 
