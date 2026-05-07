@@ -1,0 +1,110 @@
+:root {
+  --bg: #020502;
+  --fg: #47ff47;
+  --accent: #9eff9e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: "Courier New", Courier, monospace;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.terminal {
+  position: relative;
+  width: min(960px, 92vw);
+  height: min(86vh, 680px);
+  border: 1px solid #1f7a1f;
+  box-shadow: 0 0 24px rgba(71, 255, 71, 0.18), inset 0 0 12px rgba(71, 255, 71, 0.12);
+  background: radial-gradient(circle at center, #041004 0%, #010301 70%);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.32) 3px,
+    rgba(0, 0, 0, 0.32) 4px
+  );
+  animation: flicker 0.14s infinite alternate;
+}
+
+.output {
+  margin: 0;
+  flex: 1;
+  white-space: pre-wrap;
+  overflow-y: auto;
+  line-height: 1.4;
+}
+
+.prompt {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.prompt-symbol {
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+#terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--fg);
+  font: inherit;
+  outline: none;
+  caret-color: transparent;
+}
+
+.prompt::after {
+  content: "_";
+  color: var(--fg);
+  animation: blink 1s steps(1, end) infinite;
+}
+
+.success {
+  color: #b8ffb8;
+}
+
+.error {
+  color: #ff9f9f;
+}
+
+@keyframes blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes flicker {
+  from {
+    opacity: 0.16;
+  }
+  to {
+    opacity: 0.24;
+  }
+}
