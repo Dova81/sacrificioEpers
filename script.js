@@ -6,7 +6,7 @@ const input = document.getElementById("terminal-input");
 const RIDDLES = [
   {
     text: "Soy un guardián de la verdad en una transacción: o todo se cumple o nada sucede. ¿Qué propiedad ACID soy?",
-    answers: ["atomicidad", "atomo", "atómica", "atomicity"],
+    answers: ["atomicidad", "átomo", "atómica", "atomicity"],
   },
   {
     text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí. ¿Qué propiedad ACID soy?",
@@ -204,7 +204,10 @@ function formatRiddleLabel(index) {
 }
 
 async function askCurrentRiddle() {
-  if (currentRiddleIndex < 0 || currentRiddleIndex >= RIDDLES.length) return;
+  if (currentRiddleIndex < 0 || currentRiddleIndex >= RIDDLES.length) {
+    appendLine("Estado de acertijo inválido. Usa 'restart' para reintentar.", "error");
+    return;
+  }
   await typeLine(formatRiddleLabel(currentRiddleIndex));
   await typeLine(RIDDLES[currentRiddleIndex].text);
   appendLine("Responde con una palabra o frase corta.");
@@ -218,6 +221,7 @@ async function startChallenge(forceRestart = false) {
 
   if (challengeStarted && !forceRestart) {
     appendLine("La prueba ya está en curso. Responde el acertijo actual.");
+    await askCurrentRiddle();
     return;
   }
 
@@ -248,7 +252,10 @@ function denyAccess() {
 
 async function processChallengeAnswer(cmd) {
   const riddle = RIDDLES[currentRiddleIndex];
-  if (!riddle) return;
+  if (!riddle) {
+    appendLine("Secuencia de acertijos desincronizada. Usa 'restart'.", "error");
+    return;
+  }
 
   const isCorrect = riddle.answers.map(normalize).includes(cmd);
   if (!isCorrect) {
