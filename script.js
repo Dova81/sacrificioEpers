@@ -10,6 +10,7 @@ const RIDDLE_ANSWERS = ["libro", "un libro", "grimorio", "un grimorio"];
 
 const SECRET_COMMAND = "abaddon";
 const SOUND_ENABLED = false;
+let audioContext = null;
 
 const bootLines = [
   "[OK] Iniciando Protocolo de Invocación IX...",
@@ -35,7 +36,10 @@ let writing = Promise.resolve();
 
 function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
   if (!SOUND_ENABLED) return;
-  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  const ctx = audioContext;
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "square";
@@ -45,7 +49,6 @@ function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
   gain.connect(ctx.destination);
   osc.start();
   osc.stop(ctx.currentTime + duration);
-  osc.onended = () => ctx.close();
 }
 
 function scrollToBottom() {
@@ -70,7 +73,7 @@ function typeLine(text = "", className = "", speed = 12) {
         let index = 0;
 
         const tick = () => {
-          line.textContent += text[index] ?? "";
+          line.textContent += text[index] || "";
           if (text[index] && text[index] !== " ") playBeep(700, 0.01, 0.008);
           index += 1;
           scrollToBottom();
@@ -183,9 +186,15 @@ async function runCommand(rawValue) {
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   const value = input.value;
-  input.value = "";
+  input.disabled = true;
   playBeep(980, 0.02, 0.01);
-  await runCommand(value);
+  try {
+    await runCommand(value);
+    input.value = "";
+  } finally {
+    input.disabled = false;
+    input.focus();
+  }
 });
 
 input.addEventListener("keydown", () => playBeep(440, 0.008, 0.006));

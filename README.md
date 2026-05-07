@@ -13,7 +13,7 @@ Terminal web temática ocultista lista para GitHub Pages.
 
 ## Uso local
 
-Abrí `index.html` en tu navegador.
+Abrir `index.html` en tu navegador.
 
 Comandos disponibles:
 
@@ -24,7 +24,7 @@ Comandos disponibles:
 
 ## Personalizar acertijo
 
-En `script.js` editá estas constantes:
+En `script.js` editar estas constantes:
 
 - `RIDDLE_TEXT` para cambiar el enunciado
 - `RIDDLE_ANSWERS` para cambiar respuestas válidas
