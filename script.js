@@ -10,6 +10,7 @@ const RIDDLE_ANSWERS = ["libro", "un libro", "grimorio", "un grimorio"];
 
 const SECRET_COMMAND = "abaddon";
 const SOUND_ENABLED = false;
+const PROMPT_PREFIX = "C:\\RITUAL>";
 let audioContext = null;
 
 const bootLines = [
@@ -73,8 +74,9 @@ function typeLine(text = "", className = "", speed = 12) {
         let index = 0;
 
         const tick = () => {
-          line.textContent += text[index] || "";
-          if (text[index] && text[index] !== " ") playBeep(700, 0.01, 0.008);
+          const char = text[index] || "";
+          line.textContent += char;
+          if (char && char !== " ") playBeep(700, 0.01, 0.008);
           index += 1;
           scrollToBottom();
           if (index <= text.length) {
@@ -147,7 +149,7 @@ async function runCommand(rawValue) {
   const cmd = normalize(rawValue);
   if (!cmd) return;
 
-  appendLine(`C:\\RITUAL> ${rawValue}`);
+  appendLine(`${PROMPT_PREFIX} ${rawValue}`);
 
   if (cmd === "help") {
     printHelp();
