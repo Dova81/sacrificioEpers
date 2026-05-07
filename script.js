@@ -24,7 +24,7 @@ const RIDDLES = [
 // ================================
 
 const SECRET_COMMAND = "abaddon";
-const RDJ_COMMANDS = ["rdj"];
+const RDJ_COMMAND = "rdj";
 const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
 const AMBIENT_VOLUME_LEVEL = 0.022;
@@ -63,7 +63,7 @@ let writing = Promise.resolve();
 let currentRiddleIndex = 0;
 
 const RDJ_NARRATION = [
-  "Un maremoto de terror primigenio nos devoró tras la apertura del ataúd en las entrañas húmedas del cementerio. En ese breve instante, asfixiados por el temor hacia lo inefable, sentimos como algo dentro nuestro se había desaparecido y transferido a otro lugar. Algo tan sutil como un aliento, tan definitivo la extinción de una estrella.",
+  "Un maremoto de terror primigenio nos devoró tras la apertura del ataúd en las entrañas húmedas del cementerio. En ese breve instante, asfixiados por el temor hacia lo inefable, sentimos como algo dentro nuestro había desaparecido y transferido a otro lugar. Algo tan sutil como un aliento, tan definitivo como la extinción de una estrella.",
   "Cuando la sensación finalmente cedió, sólo quedó la certeza inquietante de que algo muy peligroso había sucedido, aunque no sabíamos qué. En la tumba no encontramos nada.",
   "Al salir de la catacumba, el cementerio parecía normal. Aunque nos sintiéramos bien, terminamos ese día con la certeza de que algo que guardábamos con recelo sin saberlo había sido arrebatado de nosotros.",
   "Las semanas subsiguientes transcurrieron en una espiral descendente hacia la comprensión de lo incomprensible. La sensación de pérdida de algo esencial en nosotros no desapareció, pero nos acostumbramos lo suficiente para continuar con nuestra misión. Los informes de desapariciones nocturnas aumentaban exponencialmente día tras día, y lo más inquietante: una parodia grotesca del milagro de Lázaro; las personas aparecían al día siguiente, pero diferentes.",
@@ -85,7 +85,7 @@ const RDJ_NARRATION = [
   "El aire se volvió espeso, pesado, y un sudor frío comenzó a formarse detrás de nuestras nucas.",
   "Otro paso.",
   "Una sensación de opresión y temor forzó a más de uno a caer de rodillas al suelo, incapaces de soportar el peso de lo que se acercaba. La sombra que lo seguía ahora se contorsionaba en una forma demoníaca, afilada, retorcida, hambrienta.",
-  "Finalmente, la figura llegó lo suficientemente cerca como para que podamos distinguir sus rasgos. Era un muchacho. Estaba agotado, con los ojos cargados de una preocupación insondable, como si su misma existencia fuera una carga demasiado pesada.",
+  "Finalmente, la figura llegó lo suficientemente cerca como para que pudiéramos distinguir sus rasgos. Era un muchacho. Estaba agotado, con los ojos cargados de una preocupación insondable, como si su misma existencia fuera una carga demasiado pesada.",
   "Mantuvo una distancia cautelosa, pero su presencia lo llenaba todo.",
   "\"Verán, yo soy RDJ.\"",
   "\"Aunque no me comporte como tal, yo también soy un poseído.\"",
@@ -256,8 +256,12 @@ function narrateWithSpeechSynthesis(text) {
     .map((part) => part.trim())
     .filter(Boolean);
   if (!chunks.length) return;
+  let speechStarted = false;
+  let fallbackTimerId = null;
 
   const speakChunks = (voice) => {
+    if (speechStarted) return;
+    speechStarted = true;
     const queue = [...chunks];
     const speakNext = () => {
       const nextText = queue.shift();
@@ -284,13 +288,20 @@ function narrateWithSpeechSynthesis(text) {
 
   if (!trySpeakWithVoice()) {
     const onVoicesReady = () => {
+      if (speechStarted) {
+        speech.removeEventListener("voiceschanged", onVoicesReady);
+        return;
+      }
       if (!trySpeakWithVoice()) return;
+      if (fallbackTimerId) {
+        clearTimeout(fallbackTimerId);
+      }
       speech.removeEventListener("voiceschanged", onVoicesReady);
     };
     speech.addEventListener("voiceschanged", onVoicesReady);
-    setTimeout(() => {
+    fallbackTimerId = setTimeout(() => {
       speech.removeEventListener("voiceschanged", onVoicesReady);
-      if (!speech.speaking && !speech.pending) {
+      if (!speechStarted && !speech.speaking && !speech.pending) {
         speakChunks(null);
       }
     }, VOICE_LOADING_TIMEOUT_MS);
@@ -437,7 +448,7 @@ async function runCommand(rawValue) {
     return;
   }
 
-  if (RDJ_COMMANDS.includes(cmd)) {
+  if (cmd === RDJ_COMMAND) {
     runRdjEasterEgg();
     return;
   }
