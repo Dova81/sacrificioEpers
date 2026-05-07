@@ -259,8 +259,7 @@ function narrateWithSpeechSynthesis(text) {
   }
 
   const chunks = text
-    .split(/\n{2,}/)
-    .flatMap((part) => part.split(/(?<=[.!?;:])\s+/))
+    .split(/\n{2,}|(?<=[.!?;:])\s+/)
     .map((part) => part.trim())
     .filter(Boolean);
   if (!chunks.length) return;
@@ -288,14 +287,20 @@ function narrateWithSpeechSynthesis(text) {
       if (!nextText) return;
       const utterance = new SpeechSynthesisUtterance(nextText);
       utterance.lang = "es-ES";
-      const wave = utteranceIndex % 2 === 0 ? -1 : 1;
+      const variationMultiplier = utteranceIndex % 2 === 0 ? -1 : 1;
       utterance.rate = Math.max(
         0.1,
-        Math.min(10, RDJ_VOICE_BASE_RATE + wave * RDJ_VOICE_RATE_VARIATION)
+        Math.min(
+          10,
+          RDJ_VOICE_BASE_RATE + variationMultiplier * RDJ_VOICE_RATE_VARIATION
+        )
       );
       utterance.pitch = Math.max(
         0,
-        Math.min(2, RDJ_VOICE_BASE_PITCH + wave * RDJ_VOICE_PITCH_VARIATION)
+        Math.min(
+          2,
+          RDJ_VOICE_BASE_PITCH + variationMultiplier * RDJ_VOICE_PITCH_VARIATION
+        )
       );
       utterance.volume = 1;
       if (voice) utterance.voice = voice;
