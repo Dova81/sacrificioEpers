@@ -245,20 +245,55 @@ function narrateWithSpeechSynthesis(text) {
     return;
   }
 
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "es-ES";
-  utterance.rate = 0.95;
-  utterance.pitch = 0.85;
-  utterance.volume = 1;
-
-  const voices = window.speechSynthesis.getVoices();
-  const spanishVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith("es"));
-  if (spanishVoice) {
-    utterance.voice = spanishVoice;
+  const speech = window.speechSynthesis;
+  if (speech.speaking || speech.pending) {
+    speech.cancel();
   }
 
-  window.speechSynthesis.speak(utterance);
+  const chunks = text
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+  if (!chunks.length) return;
+
+  const speakChunks = (voice) => {
+    const queue = [...chunks];
+    const speakNext = () => {
+      const nextText = queue.shift();
+      if (!nextText) return;
+      const utterance = new SpeechSynthesisUtterance(nextText);
+      utterance.lang = "es-ES";
+      utterance.rate = 0.95;
+      utterance.pitch = 0.85;
+      utterance.volume = 1;
+      if (voice) utterance.voice = voice;
+      utterance.onend = speakNext;
+      speech.speak(utterance);
+    };
+    speakNext();
+  };
+
+  const trySpeakWithVoice = () => {
+    const voices = speech.getVoices();
+    if (!voices.length) return false;
+    const spanishVoice = voices.find((voice) => voice.lang.toLowerCase().startsWith("es"));
+    speakChunks(spanishVoice ?? null);
+    return true;
+  };
+
+  if (!trySpeakWithVoice()) {
+    const onVoicesReady = () => {
+      if (!trySpeakWithVoice()) return;
+      speech.removeEventListener("voiceschanged", onVoicesReady);
+    };
+    speech.addEventListener("voiceschanged", onVoicesReady);
+    setTimeout(() => {
+      speech.removeEventListener("voiceschanged", onVoicesReady);
+      if (!speech.speaking && !speech.pending) {
+        speakChunks(null);
+      }
+    }, 800);
+  }
 }
 
 function runRdjEasterEgg() {
