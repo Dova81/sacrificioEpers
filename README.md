@@ -1,6 +1,6 @@
 # sacrificioPage
 
-Terminal web temática ocultista lista para GitHub Pages.
+Terminal web temática ocultista lista para publicarse con **GitHub Pages**.
 
 ## Estructura
 
@@ -8,14 +8,17 @@ Terminal web temática ocultista lista para GitHub Pages.
 /
 ├── index.html
 ├── style.css
-└── script.js
+├── script.js
+└── .github/workflows/deploy-pages.yml
 ```
 
-## Uso local
+## Desarrollo local
 
-Abrir `index.html` en tu navegador.
+Este proyecto es un sitio estático y no requiere build ni dependencias externas.
 
-Comandos disponibles:
+Para probarlo localmente, abre `index.html` en tu navegador.
+
+## Comandos disponibles
 
 - `help`
 - `start`
@@ -24,16 +27,13 @@ Comandos disponibles:
 
 ## Personalizar acertijo
 
-En `script.js` editar estas constantes:
+En `script.js` se pueden editar estas constantes:
 
 - `RIDDLE_TEXT` para cambiar el enunciado
 - `RIDDLE_ANSWERS` para cambiar respuestas válidas
 
-## Deploy en GitHub Pages
+## Despliegue
 
-1. Subí los cambios a tu rama principal (`main`) o la que uses para Pages.
-2. En GitHub: **Settings → Pages**.
-3. En **Build and deployment**, elegí:
-   - **Source**: `Deploy from a branch`
-   - **Branch**: `main` (o tu rama) y carpeta `/ (root)`
-4. Guardá y esperá la URL pública que muestra GitHub Pages.
+El repositorio incluye `.github/workflows/deploy-pages.yml` para desplegar automáticamente en **GitHub Pages** cuando hay cambios en la rama `main`.
+
+También se puede ejecutar manualmente desde la pestaña **Actions** en GitHub.
