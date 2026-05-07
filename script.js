@@ -5,19 +5,19 @@ const input = document.getElementById("terminal-input");
 // === ZONA EDITABLE DE ACERTIJOS ===
 const RIDDLES = [
   {
-    text: "Soy un guardián de la verdad en una transacción: o todo se cumple o nada sucede. ¿Qué propiedad ACID soy?",
+    text: "Soy un guardián de la verdad en una accion: o todo se cumple o nada sucede.",
     answers: ["atomicidad", "atómica", "atomicity"],
   },
   {
-    text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí. ¿Qué propiedad ACID soy?",
+    text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí.",
     answers: ["aislamiento", "aislado", "isolation", "isolated"],
   },
   {
-    text: "Tras confirmar un cambio, ni una caída del sistema puede borrarlo. ¿Qué propiedad ACID soy?",
+    text: "Tras existir, nada puede destruirme.",
     answers: ["durabilidad", "durability"],
   },
   {
-    text: "Si todo se apaga y vuelve a encender, mis datos siguen ahí. ¿Qué concepto de bases de datos soy?",
+    text: "Donde sea que soy invocdo, soy siempre el mismo.",
     answers: ["estado persistente", "persistencia", "durable state", "estado durable"],
   },
 ];
