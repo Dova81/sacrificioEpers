@@ -18,7 +18,7 @@ const RIDDLES = [
   },
   {
     text: "Donde sea que soy invocdo, soy siempre el mismo.",
-    answers: ["estado persistente", "persistencia", "durable state", "estado durable"],
+    answers: ["consistency", "consistencia"],
   },
 ];
 // ================================
