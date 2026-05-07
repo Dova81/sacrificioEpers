@@ -27,6 +27,7 @@ Para probarlo localmente, abre `index.html` en tu navegador.
 - `sound on`
 - `sound off`
 - `abaddon` (easter egg)
+- `rdj` (easter egg narrativo con audio por voz del navegador)
 
 ## Personalizar acertijos
 
