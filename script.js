@@ -2,17 +2,34 @@ const output = document.getElementById("output");
 const form = document.getElementById("terminal-form");
 const input = document.getElementById("terminal-input");
 
-// === ZONA EDITABLE DEL ACERTIJO ===
-const RIDDLE_TEXT =
-  "Tengo siglos de historia pero no envejezco. Guardo secretos pero no hablo. Soy invocado en la oscuridad pero no soy un demonio. ¿Qué soy?";
-const RIDDLE_ANSWERS = ["libro", "un libro", "grimorio", "un grimorio"];
+// === ZONA EDITABLE DE ACERTIJOS ===
+const RIDDLES = [
+  {
+    text: "Soy un guardián de la verdad en una transacción: o todo se cumple o nada sucede. ¿Qué propiedad ACID soy?",
+    answers: ["atomicidad", "atomo", "atómica", "atomicity"],
+  },
+  {
+    text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí. ¿Qué propiedad ACID soy?",
+    answers: ["aislamiento", "isolation"],
+  },
+  {
+    text: "Tras confirmar un cambio, ni una caída del sistema puede borrarlo. ¿Qué propiedad ACID soy?",
+    answers: ["durabilidad", "durability"],
+  },
+  {
+    text: "Si cierro mal una conexión, sigo existiendo para ser usado de nuevo sin perderme. ¿Qué concepto de persistencia soy?",
+    answers: ["estado persistente", "persistencia", "durable state", "estado durable"],
+  },
+];
 // ================================
 
 const SECRET_COMMAND = "abaddon";
-const SOUND_ENABLED = false;
+const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
 let audioContext = null;
 let lastTypeBeepAt = 0;
+let ambientStarted = false;
+let ambientNodes = null;
 
 const bootLines = [
   "[OK] Iniciando Protocolo de Invocación IX...",
@@ -30,18 +47,73 @@ const bootLines = [
   "",
   "Bienvenido, iniciado.",
   "Escribe 'help' para ver comandos.",
+  "Tip: usa 'sound on' o 'sound off' para el ambiente.",
 ];
 
 let challengeStarted = false;
 let solved = false;
 let writing = Promise.resolve();
+let currentRiddleIndex = 0;
 
-function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
-  if (!SOUND_ENABLED) return;
+function ensureAudioContext() {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
-  const ctx = audioContext;
+  if (audioContext.state === "suspended") {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
+function startAmbientSound() {
+  if (!SOUND_ENABLED || ambientStarted) return;
+  const ctx = ensureAudioContext();
+  const master = ctx.createGain();
+  const droneA = ctx.createOscillator();
+  const droneB = ctx.createOscillator();
+  const wobble = ctx.createOscillator();
+  const wobbleGain = ctx.createGain();
+
+  master.gain.value = 0.022;
+  droneA.type = "triangle";
+  droneA.frequency.value = 58;
+  droneB.type = "sine";
+  droneB.frequency.value = 87;
+  wobble.type = "sine";
+  wobble.frequency.value = 0.1;
+  wobbleGain.gain.value = 3;
+
+  wobble.connect(wobbleGain);
+  wobbleGain.connect(droneB.frequency);
+  droneA.connect(master);
+  droneB.connect(master);
+  master.connect(ctx.destination);
+
+  droneA.start();
+  droneB.start();
+  wobble.start();
+
+  ambientNodes = { master, droneA, droneB, wobble, wobbleGain };
+  ambientStarted = true;
+}
+
+function stopAmbientSound() {
+  if (!ambientStarted || !ambientNodes) return;
+  const { droneA, droneB, wobble, master } = ambientNodes;
+  const now = audioContext?.currentTime ?? 0;
+  master.gain.cancelScheduledValues(now);
+  master.gain.setValueAtTime(master.gain.value, now);
+  master.gain.linearRampToValueAtTime(0, now + 0.25);
+  droneA.stop(now + 0.28);
+  droneB.stop(now + 0.28);
+  wobble.stop(now + 0.28);
+  ambientNodes = null;
+  ambientStarted = false;
+}
+
+function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
+  if (!SOUND_ENABLED) return;
+  const ctx = ensureAudioContext();
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = "square";
@@ -122,19 +194,37 @@ function printHelp() {
   appendLine("Comandos disponibles:");
   appendLine("  help  - Muestra esta ayuda");
   appendLine("  start - Inicia la prueba iniciática");
+  appendLine("  restart - Reinicia la prueba iniciática");
   appendLine("  clear - Limpia la terminal");
+  appendLine("  sound on/off - Activa o desactiva sonido ambiente");
 }
 
-async function startChallenge() {
+function formatRiddleLabel(index) {
+  return `ACERTIJO ${index + 1}/${RIDDLES.length}`;
+}
+
+async function askCurrentRiddle() {
+  if (currentRiddleIndex < 0 || currentRiddleIndex >= RIDDLES.length) return;
+  await typeLine(formatRiddleLabel(currentRiddleIndex));
+  await typeLine(RIDDLES[currentRiddleIndex].text);
+  appendLine("Responde con una palabra o frase corta.");
+}
+
+async function startChallenge(forceRestart = false) {
   if (solved) {
     appendLine("El sello ya ha sido roto. Tu acceso permanece abierto.", "success");
     return;
   }
 
+  if (challengeStarted && !forceRestart) {
+    appendLine("La prueba ya está en curso. Responde el acertijo actual.");
+    return;
+  }
+
   challengeStarted = true;
+  currentRiddleIndex = 0;
   await typeLine("RITUAL DE ACCESO // NIVEL: NEOFITO");
-  await typeLine(RIDDLE_TEXT);
-  appendLine("Escribe tu respuesta en una sola palabra o frase corta.");
+  await askCurrentRiddle();
 }
 
 async function grantAccess() {
@@ -154,6 +244,27 @@ async function grantAccess() {
 
 function denyAccess() {
   appendLine("Las sombras no repiten tu palabra. Intenta de nuevo.", "error");
+}
+
+async function processChallengeAnswer(cmd) {
+  const riddle = RIDDLES[currentRiddleIndex];
+  if (!riddle) return;
+
+  const isCorrect = riddle.answers.map(normalize).includes(cmd);
+  if (!isCorrect) {
+    denyAccess();
+    return;
+  }
+
+  appendLine(`Sello ${currentRiddleIndex + 1} quebrado.`, "success");
+  currentRiddleIndex += 1;
+
+  if (currentRiddleIndex >= RIDDLES.length) {
+    await grantAccess();
+    return;
+  }
+
+  await askCurrentRiddle();
 }
 
 async function runCommand(rawValue) {
@@ -177,6 +288,23 @@ async function runCommand(rawValue) {
     return;
   }
 
+  if (cmd === "restart") {
+    await startChallenge(true);
+    return;
+  }
+
+  if (cmd === "sound on" || cmd === "sonido on") {
+    startAmbientSound();
+    appendLine("Sonido ambiente activado.");
+    return;
+  }
+
+  if (cmd === "sound off" || cmd === "sonido off") {
+    stopAmbientSound();
+    appendLine("Sonido ambiente desactivado.");
+    return;
+  }
+
   if (cmd === SECRET_COMMAND) {
     appendLine("[EASTER EGG] El Ojo del Vacío pestañea y luego calla.");
     return;
@@ -187,13 +315,7 @@ async function runCommand(rawValue) {
     return;
   }
 
-  const isCorrect = RIDDLE_ANSWERS.map(normalize).includes(cmd);
-  if (isCorrect) {
-    await grantAccess();
-    return;
-  }
-
-  denyAccess();
+  await processChallengeAnswer(cmd);
 }
 
 form.addEventListener("submit", async (event) => {
@@ -210,6 +332,9 @@ form.addEventListener("submit", async (event) => {
   }
 });
 
-input.addEventListener("keydown", () => playBeep(440, 0.008, 0.006));
+input.addEventListener("keydown", () => {
+  playBeep(440, 0.008, 0.006);
+  startAmbientSound();
+});
 
 boot();
