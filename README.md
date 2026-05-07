@@ -33,7 +33,7 @@ Para probarlo localmente, abre `index.html` en tu navegador.
 En `script.js` se pueden editar estas constantes:
 
 - `RIDDLES` para cambiar enunciados y respuestas válidas de cada acertijo
-- `SOUND_ENABLED` para activar/desactivar toda la capa de sonido
+- `SOUND_ENABLED` para activar/desactivar toda la capa de sonido 
 
 ## Despliegue
 
