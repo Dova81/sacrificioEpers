@@ -32,6 +32,7 @@ const WOBBLE_FREQUENCY = 0.1;
 const WOBBLE_FREQUENCY_DEVIATION = 3;
 const AMBIENT_FADE_OUT_DURATION = 0.25;
 const AMBIENT_STOP_DELAY = 0.28;
+// Tiempo breve para esperar la carga asíncrona de voces antes de usar fallback.
 const VOICE_LOADING_TIMEOUT_MS = 800;
 let audioContext = null;
 let lastTypeBeepAt = 0;
@@ -258,10 +259,16 @@ function narrateWithSpeechSynthesis(text) {
   if (!chunks.length) return;
   let speechStarted = false;
   let fallbackTimerId = null;
+  const beginSpeech = () => {
+    if (speechStarted || speech.speaking || speech.pending) {
+      return false;
+    }
+    speechStarted = true;
+    return true;
+  };
 
   const speakChunks = (voice) => {
-    if (speechStarted) return;
-    speechStarted = true;
+    if (!beginSpeech()) return;
     const queue = [...chunks];
     const speakNext = () => {
       const nextText = queue.shift();
@@ -301,7 +308,7 @@ function narrateWithSpeechSynthesis(text) {
     speech.addEventListener("voiceschanged", onVoicesReady);
     fallbackTimerId = setTimeout(() => {
       speech.removeEventListener("voiceschanged", onVoicesReady);
-      if (!speechStarted && !speech.speaking && !speech.pending) {
+      if (!speechStarted) {
         speakChunks(null);
       }
     }, VOICE_LOADING_TIMEOUT_MS);
