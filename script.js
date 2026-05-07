@@ -6,18 +6,18 @@ const input = document.getElementById("terminal-input");
 const RIDDLES = [
   {
     text: "Soy un guardián de la verdad en una transacción: o todo se cumple o nada sucede. ¿Qué propiedad ACID soy?",
-    answers: ["atomicidad", "átomo", "atómica", "atomicity"],
+    answers: ["atomicidad", "atómica", "atomicity"],
   },
   {
     text: "Aunque dos rituales se lancen al mismo tiempo, impido que se corrompan entre sí. ¿Qué propiedad ACID soy?",
-    answers: ["aislamiento", "isolation"],
+    answers: ["aislamiento", "aislado", "isolation", "isolated"],
   },
   {
     text: "Tras confirmar un cambio, ni una caída del sistema puede borrarlo. ¿Qué propiedad ACID soy?",
     answers: ["durabilidad", "durability"],
   },
   {
-    text: "Si cierro mal una conexión, sigo existiendo para ser usado de nuevo sin perderme. ¿Qué concepto de persistencia soy?",
+    text: "Si todo se apaga y vuelve a encender, mis datos siguen ahí. ¿Qué concepto de bases de datos soy?",
     answers: ["estado persistente", "persistencia", "durable state", "estado durable"],
   },
 ];
@@ -26,6 +26,11 @@ const RIDDLES = [
 const SECRET_COMMAND = "abaddon";
 const SOUND_ENABLED = true;
 const PROMPT_PREFIX = "C:\\RITUAL>";
+const AMBIENT_VOLUME = 0.022;
+const WOBBLE_FREQUENCY = 0.1;
+const WOBBLE_GAIN_AMOUNT = 3;
+const AMBIENT_FADE_OUT_DURATION = 0.25;
+const AMBIENT_STOP_DELAY = 0.28;
 let audioContext = null;
 let lastTypeBeepAt = 0;
 let ambientStarted = false;
@@ -74,14 +79,14 @@ function startAmbientSound() {
   const wobble = ctx.createOscillator();
   const wobbleGain = ctx.createGain();
 
-  master.gain.value = 0.022;
+  master.gain.value = AMBIENT_VOLUME;
   droneA.type = "triangle";
   droneA.frequency.value = 58;
   droneB.type = "sine";
   droneB.frequency.value = 87;
   wobble.type = "sine";
-  wobble.frequency.value = 0.1;
-  wobbleGain.gain.value = 3;
+  wobble.frequency.value = WOBBLE_FREQUENCY;
+  wobbleGain.gain.value = WOBBLE_GAIN_AMOUNT;
 
   wobble.connect(wobbleGain);
   wobbleGain.connect(droneB.frequency);
@@ -103,10 +108,10 @@ function stopAmbientSound() {
   const now = audioContext?.currentTime ?? 0;
   master.gain.cancelScheduledValues(now);
   master.gain.setValueAtTime(master.gain.value, now);
-  master.gain.linearRampToValueAtTime(0, now + 0.25);
-  droneA.stop(now + 0.28);
-  droneB.stop(now + 0.28);
-  wobble.stop(now + 0.28);
+  master.gain.linearRampToValueAtTime(0, now + AMBIENT_FADE_OUT_DURATION);
+  droneA.stop(now + AMBIENT_STOP_DELAY);
+  droneB.stop(now + AMBIENT_STOP_DELAY);
+  wobble.stop(now + AMBIENT_STOP_DELAY);
   ambientNodes = null;
   ambientStarted = false;
 }
