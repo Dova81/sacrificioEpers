@@ -34,6 +34,10 @@ const AMBIENT_FADE_OUT_DURATION = 0.25;
 const AMBIENT_STOP_DELAY = 0.28;
 // Tiempo breve para esperar la carga asíncrona de voces antes de usar fallback.
 const VOICE_LOADING_TIMEOUT_MS = 800;
+const RDJ_VOICE_BASE_RATE = 0.78;
+const RDJ_VOICE_BASE_PITCH = 0.42;
+const RDJ_VOICE_RATE_VARIATION = 0.08;
+const RDJ_VOICE_PITCH_VARIATION = 0.18;
 let audioContext = null;
 let lastTypeBeepAt = 0;
 let ambientStarted = false;
@@ -255,7 +259,7 @@ function narrateWithSpeechSynthesis(text) {
   }
 
   const chunks = text
-    .split(/\n{2,}/)
+    .split(/\n{2,}|(?<=[.!?;:])\s+/)
     .map((part) => part.trim())
     .filter(Boolean);
   if (!chunks.length) return;
@@ -277,16 +281,33 @@ function narrateWithSpeechSynthesis(text) {
   const speakChunks = (voice) => {
     if (!beginSpeech()) return;
     const queue = [...chunks];
+    let utteranceIndex = 0;
     const speakNext = () => {
       const nextText = queue.shift();
       if (!nextText) return;
       const utterance = new SpeechSynthesisUtterance(nextText);
       utterance.lang = "es-ES";
-      utterance.rate = 0.95;
-      utterance.pitch = 0.85;
+      const variationMultiplier = utteranceIndex % 2 === 0 ? -1 : 1;
+      utterance.rate = Math.max(
+        0.1,
+        Math.min(
+          10,
+          RDJ_VOICE_BASE_RATE + variationMultiplier * RDJ_VOICE_RATE_VARIATION
+        )
+      );
+      utterance.pitch = Math.max(
+        0,
+        Math.min(
+          2,
+          RDJ_VOICE_BASE_PITCH + variationMultiplier * RDJ_VOICE_PITCH_VARIATION
+        )
+      );
       utterance.volume = 1;
       if (voice) utterance.voice = voice;
-      utterance.onend = speakNext;
+      utterance.onend = () => {
+        utteranceIndex += 1;
+        speakNext();
+      };
       speech.speak(utterance);
     };
     speakNext();
