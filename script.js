@@ -12,6 +12,7 @@ const SECRET_COMMAND = "abaddon";
 const SOUND_ENABLED = false;
 const PROMPT_PREFIX = "C:\\RITUAL>";
 let audioContext = null;
+let lastTypeBeepAt = 0;
 
 const bootLines = [
   "[OK] Iniciando Protocolo de Invocación IX...",
@@ -50,6 +51,10 @@ function playBeep(frequency = 880, duration = 0.03, volume = 0.015) {
   gain.connect(ctx.destination);
   osc.start();
   osc.stop(ctx.currentTime + duration);
+  osc.onended = () => {
+    osc.disconnect();
+    gain.disconnect();
+  };
 }
 
 function scrollToBottom() {
@@ -76,7 +81,13 @@ function typeLine(text = "", className = "", speed = 12) {
         const tick = () => {
           const char = text[index] || "";
           line.textContent += char;
-          if (char && char !== " ") playBeep(700, 0.01, 0.008);
+          if (char && char !== " ") {
+            const now = performance.now();
+            if (now - lastTypeBeepAt > 25) {
+              playBeep(700, 0.01, 0.008);
+              lastTypeBeepAt = now;
+            }
+          }
           index += 1;
           scrollToBottom();
           if (index <= text.length) {
@@ -94,7 +105,7 @@ function typeLine(text = "", className = "", speed = 12) {
 }
 
 function normalize(value) {
-  return value
+  return String(value ?? "")
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
