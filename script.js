@@ -64,7 +64,7 @@ let writing = Promise.resolve();
 let currentRiddleIndex = 0;
 
 const RDJ_NARRATION = [
-  "Un maremoto de terror primigenio nos devoró tras la apertura del ataúd en las entrañas húmedas del cementerio. En ese breve instante, asfixiados por el temor hacia lo inefable, sentimos como algo dentro nuestro había desaparecido y transferido a otro lugar. Algo tan sutil como un aliento, tan definitivo como la extinción de una estrella.",
+  "Un maremoto de terror primigenio nos devoró tras la apertura del ataúd en las entrañas húmedas del cementerio. En ese breve instante, asfixiados por el temor hacia lo inefable, sentimos como algo dentro de nosotros había desaparecido y transferido a otro lugar. Algo tan sutil como un aliento, tan definitivo como la extinción de una estrella.",
   "Cuando la sensación finalmente cedió, sólo quedó la certeza inquietante de que algo muy peligroso había sucedido, aunque no sabíamos qué. En la tumba no encontramos nada.",
   "Al salir de la catacumba, el cementerio parecía normal. Aunque nos sintiéramos bien, terminamos ese día con la certeza de que algo que guardábamos con recelo sin saberlo había sido arrebatado de nosotros.",
   "Las semanas subsiguientes transcurrieron en una espiral descendente hacia la comprensión de lo incomprensible. La sensación de pérdida de algo esencial en nosotros no desapareció, pero nos acostumbramos lo suficiente para continuar con nuestra misión. Los informes de desapariciones nocturnas aumentaban exponencialmente día tras día, y lo más inquietante: una parodia grotesca del milagro de Lázaro; las personas aparecían al día siguiente, pero diferentes.",
