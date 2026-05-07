@@ -29,6 +29,24 @@ jobs:
         with:
           enablement: true
 
+      - name: Remove custom domain
+        uses: actions/github-script@v7
+        with:
+          script: |
+            try {
+              await github.request("DELETE /repos/{owner}/{repo}/pages/custom-domain", {
+                owner: context.repo.owner,
+                repo: context.repo.repo
+              });
+              core.info("Custom domain removed");
+            } catch (error) {
+              if (error.status === 404) {
+                core.info("No custom domain configured");
+              } else {
+                throw error;
+              }
+            }
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
