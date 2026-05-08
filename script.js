@@ -403,15 +403,13 @@ async function grantAccess() {
   solved = true;
   await typeLine("ACCESO CONCEDIDO", "success", 22);
   appendLine("", "success");
-  appendLine("      .-.", "success");
-  appendLine("   .-'   '-.", "success");
-  appendLine("  /  .-.-.  \\", "success");
-  appendLine(" |  /  |  \\  |", "success");
-  appendLine(" |  \\  |  /  |", "success");
-  appendLine("  \\  '-'  /", "success");
-  appendLine("   '-.___.-'", "success");
+  appendLine("RRRR   DDDD    JJJJJ", "success");
+  appendLine("R   R  D   D      J ", "success");
+  appendLine("RRRR   D   D      J ", "success");
+  appendLine("R  R   D   D  J   J ", "success");
+  appendLine("R   R  DDDD    JJJ  ", "success");
   appendLine("", "success");
-  appendLine("El grimorio te reconoce. Cruza el umbral.", "success");
+  appendLine("Ventum seminabunt et turbinem metent", "success");
 }
 
 function denyAccess() {
